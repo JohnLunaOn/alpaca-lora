@@ -1,0 +1,6 @@
+{
+    "description": "Use only instruction field",
+    "prompt_input": "{instruction}",
+    "prompt_no_input": "{instruction}",
+    "response_split": "\nAssistant:"    
+}
