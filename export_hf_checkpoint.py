@@ -1,47 +1,37 @@
-import os
-
+import sys
 import torch
-import transformers
 from peft import PeftModel
-from transformers import LlamaForCausalLM, LlamaTokenizer  # noqa: F402
+from transformers import AutoModelForCausalLM
 
-BASE_MODEL = os.environ.get("BASE_MODEL", None)
-assert (
-    BASE_MODEL
-), "Please specify a value for BASE_MODEL environment variable, e.g. `export BASE_MODEL=huggyllama/llama-7b`"  # noqa: E501
+# Based on https://github.com/tloen/alpaca-lora/blob/main/export_hf_checkpoint.py
+# Note that this does NOT guard against no-op merges. I would suggest testing the output.
 
-tokenizer = LlamaTokenizer.from_pretrained(BASE_MODEL)
+if len(sys.argv) != 4:
+    print("Usage: python export_hf_checkpoint.py <source> <lora> <dest>")
+    exit(1)
 
-base_model = LlamaForCausalLM.from_pretrained(
-    BASE_MODEL,
+source_path = sys.argv[1]
+lora_path = sys.argv[2]
+dest_path = sys.argv[3]
+
+base_model = AutoModelForCausalLM.from_pretrained(
+    source_path,
     load_in_8bit=False,
     torch_dtype=torch.float16,
     device_map={"": "cpu"},
+    trust_remote_code=True,
 )
-
-first_weight = base_model.model.layers[0].self_attn.q_proj.weight
-first_weight_old = first_weight.clone()
 
 lora_model = PeftModel.from_pretrained(
     base_model,
-    "tloen/alpaca-lora-7b",
+    lora_path,
     device_map={"": "cpu"},
     torch_dtype=torch.float16,
 )
 
-lora_weight = lora_model.base_model.model.model.layers[
-    0
-].self_attn.q_proj.weight
-
-assert torch.allclose(first_weight_old, first_weight)
-
 # merge weights - new merging method from peft
 lora_model = lora_model.merge_and_unload()
-
 lora_model.train(False)
-
-# did we do anything?
-assert not torch.allclose(first_weight_old, first_weight)
 
 lora_model_sd = lora_model.state_dict()
 deloreanized_sd = {
@@ -50,6 +40,6 @@ deloreanized_sd = {
     if "lora" not in k
 }
 
-LlamaForCausalLM.save_pretrained(
-    base_model, "./hf_ckpt", state_dict=deloreanized_sd, max_shard_size="400MB"
+base_model.save_pretrained(
+    dest_path, state_dict=deloreanized_sd, max_shard_size="10GB"
 )
