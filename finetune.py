@@ -235,7 +235,7 @@ def train(
     args = transformers.TrainingArguments(
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
-            warmup_ratio=0.1,
+            warmup_ratio=0.05,
             num_train_epochs=num_epochs,
             learning_rate=learning_rate,
             fp16=True,
