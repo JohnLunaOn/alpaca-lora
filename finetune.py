@@ -24,6 +24,9 @@ from transformers import LlamaForCausalLM, LlamaTokenizer
 
 from utils.prompter import Prompter
 
+# HUGGING_FACE_TOKEN
+HUGGING_FACE_TOKEN = os.getenv('HUGGING_FACE_TOKEN')
+HUGGING_FACE_MODEL_ID = os.getenv('HUGGING_FACE_MODEL_ID')
 
 def train(
     # model/data params
@@ -229,14 +232,10 @@ def train(
         model.is_parallelizable = True
         model.model_parallel = True
 
-    trainer = transformers.Trainer(
-        model=model,
-        train_dataset=train_data,
-        eval_dataset=val_data,
-        args=transformers.TrainingArguments(
+    args = transformers.TrainingArguments(
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
-            warmup_steps=100,
+            warmup_ratio=0.1,
             num_train_epochs=num_epochs,
             learning_rate=learning_rate,
             fp16=True,
@@ -244,8 +243,8 @@ def train(
             optim="adamw_torch",
             evaluation_strategy="steps" if val_set_size > 0 else "no",
             save_strategy="steps",
-            eval_steps=100 if val_set_size > 0 else None,
-            save_steps=100,
+            eval_steps=50 if val_set_size > 0 else None,
+            save_steps=50,
             output_dir=output_dir,
             save_total_limit=20,
             load_best_model_at_end=True if val_set_size > 0 else False,
@@ -253,7 +252,17 @@ def train(
             group_by_length=group_by_length,
             report_to="wandb" if use_wandb else None,
             run_name=wandb_run_name if use_wandb else None,
-        ),
+        )
+    
+    if HUGGING_FACE_TOKEN and HUGGING_FACE_MODEL_ID:
+        args.set_push_to_hub(model_id=HUGGING_FACE_MODEL_ID, strategy='all_checkpoints', token=HUGGING_FACE_TOKEN, private_repo=True)
+        print(f"Checkpoints will be synced to https://huggingface.co/{HUGGING_FACE_MODEL_ID} (private)")
+
+    trainer = transformers.Trainer(
+        model=model,
+        train_dataset=train_data,
+        eval_dataset=val_data,
+        args=args,
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
         ),
