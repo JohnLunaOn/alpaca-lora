@@ -153,7 +153,7 @@ def train(
     def generate_and_tokenize_prompt(data_point):
         if not data_point["instruction"]:
             print("Error: no instruction in data")
-            
+
         full_prompt = prompter.generate_prompt(
             data_point["instruction"],
             data_point["input"],
@@ -248,7 +248,7 @@ def train(
     args = transformers.TrainingArguments(
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
-            warmup_ratio=0.05,
+            warmup_ratio=0.03,
             num_train_epochs=num_epochs,
             max_steps=max_steps,
             learning_rate=learning_rate,
