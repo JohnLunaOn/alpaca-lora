@@ -37,6 +37,7 @@ def train(
     batch_size: int = 128,
     micro_batch_size: int = 4,
     num_epochs: int = 3,
+    max_steps: int = -1,
     learning_rate: float = 3e-4,
     cutoff_len: int = 256,
     val_set_size: int = 2000,
@@ -69,6 +70,7 @@ def train(
             f"batch_size: {batch_size}\n"
             f"micro_batch_size: {micro_batch_size}\n"
             f"num_epochs: {num_epochs}\n"
+            f"max_steps: {max_steps}\n"
             f"learning_rate: {learning_rate}\n"
             f"cutoff_len: {cutoff_len}\n"
             f"val_set_size: {val_set_size}\n"
@@ -149,6 +151,9 @@ def train(
         return result
 
     def generate_and_tokenize_prompt(data_point):
+        if not data_point["instruction"]:
+            print("Error: no instruction in data")
+            
         full_prompt = prompter.generate_prompt(
             data_point["instruction"],
             data_point["input"],
@@ -190,6 +195,14 @@ def train(
         data = load_dataset("json", data_files=data_path)
     else:
         data = load_dataset(data_path)
+
+    if prompt_template_name == "only_instruction":
+        print(f"Mapping oasst1 dataset to alpaca")
+        data = data.map(lambda x: { 
+                'instruction': x['text'],
+                'input': '',
+                'output': ''
+                })
 
     if resume_from_checkpoint:
         # Check the available weights and load them
@@ -237,6 +250,7 @@ def train(
             gradient_accumulation_steps=gradient_accumulation_steps,
             warmup_ratio=0.05,
             num_train_epochs=num_epochs,
+            max_steps=max_steps,
             learning_rate=learning_rate,
             fp16=True,
             logging_steps=10,
