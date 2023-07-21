@@ -6,6 +6,8 @@ import fire
 import torch
 import transformers
 from datasets import load_dataset
+import requests
+from huggingface_hub import configure_http_backend
 
 """
 Unused imports:
@@ -24,9 +26,21 @@ from transformers import LlamaForCausalLM, LlamaTokenizer
 
 from utils.prompter import Prompter
 
-# HUGGING_FACE_TOKEN
+# HUGGING_FACE
 HUGGING_FACE_TOKEN = os.getenv('HUGGING_FACE_TOKEN')
 HUGGING_FACE_MODEL_ID = os.getenv('HUGGING_FACE_MODEL_ID')
+HTTPS_PROXY = os.getenv('https_proxy')
+HTTP_PROXY = os.getenv('http_proxy')
+
+# Create a factory function that returns a Session with configured proxies
+def backend_factory() -> requests.Session:
+    session = requests.Session()
+    session.proxies = {"http": HTTP_PROXY, "https": HTTPS_PROXY}
+    return session
+
+# Set it as the default session factory
+if HTTP_PROXY and HTTPS_PROXY:
+    configure_http_backend(backend_factory=backend_factory)
 
 def train(
     # model/data params
