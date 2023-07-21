@@ -40,6 +40,7 @@ def backend_factory() -> requests.Session:
 
 # Set it as the default session factory
 if HTTP_PROXY and HTTPS_PROXY:
+    print("Setting up hugging face proxies")
     configure_http_backend(backend_factory=backend_factory)
 
 def train(
