@@ -53,6 +53,7 @@ def train(
     micro_batch_size: int = 4,
     num_epochs: int = 3,
     max_steps: int = -1,
+    save_steps: int = 100,
     learning_rate: float = 3e-4,
     cutoff_len: int = 256,
     val_set_size: int = 2000,
@@ -86,6 +87,7 @@ def train(
             f"micro_batch_size: {micro_batch_size}\n"
             f"num_epochs: {num_epochs}\n"
             f"max_steps: {max_steps}\n"
+            f"save_steps: {save_steps}\n"
             f"learning_rate: {learning_rate}\n"
             f"cutoff_len: {cutoff_len}\n"
             f"val_set_size: {val_set_size}\n"
@@ -272,8 +274,8 @@ def train(
             optim="adamw_torch",
             evaluation_strategy="steps" if val_set_size > 0 else "no",
             save_strategy="steps",
-            eval_steps=50 if val_set_size > 0 else None,
-            save_steps=50,
+            eval_steps=save_steps if val_set_size > 0 else None,
+            save_steps=save_steps,
             output_dir=output_dir,
             save_total_limit=20,
             load_best_model_at_end=True if val_set_size > 0 else False,
