@@ -286,7 +286,7 @@ def train(
         )
     
     if HUGGING_FACE_TOKEN and HUGGING_FACE_MODEL_ID:
-        args.set_push_to_hub(model_id=HUGGING_FACE_MODEL_ID, strategy='all_checkpoints', token=HUGGING_FACE_TOKEN, private_repo=True)
+        args.set_push_to_hub(model_id=HUGGING_FACE_MODEL_ID, token=HUGGING_FACE_TOKEN, private_repo=True)
         print(f"Checkpoints will be synced to https://huggingface.co/{HUGGING_FACE_MODEL_ID} (private)")
 
     trainer = transformers.Trainer(
