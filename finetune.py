@@ -27,8 +27,6 @@ from transformers import LlamaForCausalLM, LlamaTokenizer
 from utils.prompter import Prompter
 
 # HUGGING_FACE
-HUGGING_FACE_TOKEN = os.getenv('HUGGING_FACE_TOKEN')
-HUGGING_FACE_MODEL_ID = os.getenv('HUGGING_FACE_MODEL_ID')
 HTTPS_PROXY = os.getenv('https_proxy')
 HTTP_PROXY = os.getenv('http_proxy')
 
@@ -76,6 +74,8 @@ def train(
     wandb_log_model: str = "",  # options: false | true
     resume_from_checkpoint: str = None,  # either training checkpoint or final adapter
     prompt_template_name: str = "alpaca",  # The prompt template to use, will default to alpaca.
+    hugging_face_token: str = None,
+    hugging_face_model_id: str = None,
 ):
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         print(
@@ -104,6 +104,7 @@ def train(
             f"wandb_log_model: {wandb_log_model}\n"
             f"resume_from_checkpoint: {resume_from_checkpoint or False}\n"
             f"prompt template: {prompt_template_name}\n"
+            f"hugging face model id: {hugging_face_model_id}\n"
         )
     assert (
         base_model
@@ -143,7 +144,7 @@ def train(
     tokenizer.pad_token_id = (
         0  # unk. we want this to be different from the eos token
     )
-    tokenizer.padding_side = "left"  # Allow batched inference
+    tokenizer.padding_side = "right"  # change to same settings of qlora
 
     def tokenize(prompt, add_eos_token=True):
         # there's probably a way to do this with the tokenizer settings
@@ -285,9 +286,9 @@ def train(
             run_name=wandb_run_name if use_wandb else None,
         )
     
-    if HUGGING_FACE_TOKEN and HUGGING_FACE_MODEL_ID:
-        args.set_push_to_hub(model_id=HUGGING_FACE_MODEL_ID, strategy='all_checkpoints', token=HUGGING_FACE_TOKEN, private_repo=True)
-        print(f"Checkpoints will be synced to https://huggingface.co/{HUGGING_FACE_MODEL_ID} (private)")
+    if hugging_face_token and hugging_face_model_id:
+        args.set_push_to_hub(model_id=hugging_face_model_id, strategy='all_checkpoints', token=hugging_face_token, private_repo=True)
+        print(f"Checkpoints will be synced to https://huggingface.co/{hugging_face_model_id} (private)")
 
     trainer = transformers.Trainer(
         model=model,
