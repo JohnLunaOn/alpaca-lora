@@ -271,6 +271,7 @@ def train(
             max_steps=max_steps,
             learning_rate=learning_rate,
             fp16=True,
+            logging_first_step=1,
             logging_steps=10,
             optim="adamw_torch",
             evaluation_strategy="steps" if val_set_size > 0 else "no",
