@@ -153,12 +153,15 @@ def train(
         # but again, gotta move fast
         result = tokenizer(
             prompt,
-            add_bos_token=True,
             truncation=True,
             max_length=cutoff_len,
             padding=False,
             return_tensors=None,
         )
+
+        if result["input_ids"][0] != tokenizer.bos_token_id:
+            print(f"ERROR - The first token id is: {result['input_ids'][0]}, should be BOS: {tokenizer.bos_token_id}")
+
         if (
             result["input_ids"][-1] != tokenizer.eos_token_id
             and len(result["input_ids"]) < cutoff_len
