@@ -92,7 +92,7 @@ def train(
     # train logger
     train_logging.set_verbosity_info()
     train_logging.add_handler(file_handler)
-    train_logging.get_logger("transformers").add_handler(file_handler)
+    train_logging.get_logger("transformers").addHandler(file_handler)
 
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         logger.info(
