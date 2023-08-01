@@ -139,6 +139,8 @@ def train(
         device_map=device_map,
     )
 
+    print(f"Model configs: {model.config}")
+
     tokenizer = LlamaTokenizer.from_pretrained(base_model)
 
     tokenizer.pad_token_id = (
@@ -151,6 +153,7 @@ def train(
         # but again, gotta move fast
         result = tokenizer(
             prompt,
+            add_bos_token=True,
             truncation=True,
             max_length=cutoff_len,
             padding=False,
@@ -266,7 +269,7 @@ def train(
     args = transformers.TrainingArguments(
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
-            warmup_ratio=0.03,
+            warmup_ratio=0.05,
             num_train_epochs=num_epochs,
             max_steps=max_steps,
             learning_rate=learning_rate,
