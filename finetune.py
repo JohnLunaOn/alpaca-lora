@@ -8,6 +8,7 @@ import transformers
 from datasets import load_dataset
 import requests
 from huggingface_hub import configure_http_backend
+import logging
 
 """
 Unused imports:
@@ -77,8 +78,19 @@ def train(
     hugging_face_token: str = None,
     hugging_face_model_id: str = None,
 ):
+    # setup logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    file_formatter = logging.Formatter(fmt="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+                                       datefmt="%m/%d/%Y %H:%M:%S", )
+    file_handler = logging.FileHandler(
+        os.path.join(output_dir, "training.log"))
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
-        print(
+        logger.info(
             f"Training Alpaca-LoRA model with params:\n"
             f"base_model: {base_model}\n"
             f"data_path: {data_path}\n"
@@ -139,7 +151,7 @@ def train(
         device_map=device_map,
     )
 
-    print(f"Model configs: {model.config}")
+    logger.info(f"Model configs: {model.config}")
 
     tokenizer = LlamaTokenizer.from_pretrained(base_model)
 
@@ -160,7 +172,7 @@ def train(
         )
 
         if result["input_ids"][0] != tokenizer.bos_token_id:
-            print(f"ERROR - The first token id is: {result['input_ids'][0]}, should be BOS: {tokenizer.bos_token_id}")
+            logger.error(f"ERROR - The first token id is: {result['input_ids'][0]}, should be BOS: {tokenizer.bos_token_id}")
 
         if (
             result["input_ids"][-1] != tokenizer.eos_token_id
@@ -176,7 +188,7 @@ def train(
 
     def generate_and_tokenize_prompt(data_point):
         if not data_point["instruction"]:
-            print("Error: no instruction in data")
+            logger.error("Error: no instruction in data")
 
         full_prompt = prompter.generate_prompt(
             data_point["instruction"],
@@ -221,7 +233,7 @@ def train(
         data = load_dataset(data_path)
 
     if prompt_template_name == "only_instruction":
-        print(f"Mapping oasst1 dataset to alpaca")
+        logger.info(f"Mapping oasst1 dataset to alpaca")
         data = data.map(lambda x: { 
                 'instruction': x['text'],
                 'input': '',
@@ -242,11 +254,11 @@ def train(
             )
         # The two files above have a different name depending on how they were saved, but are actually the same.
         if os.path.exists(checkpoint_name):
-            print(f"Restarting from {checkpoint_name}")
+            logger.info(f"Restarting from {checkpoint_name}")
             adapters_weights = torch.load(checkpoint_name)
             set_peft_model_state_dict(model, adapters_weights)
         else:
-            print(f"Checkpoint {checkpoint_name} not found")
+            logger.info(f"Checkpoint {checkpoint_name} not found")
 
     model.print_trainable_parameters()  # Be more transparent about the % of trainable params.
 
@@ -295,7 +307,7 @@ def train(
     
     if hugging_face_token and hugging_face_model_id:
         args.set_push_to_hub(model_id=hugging_face_model_id, strategy='all_checkpoints', token=hugging_face_token, private_repo=True)
-        print(f"Checkpoints will be synced to https://huggingface.co/{hugging_face_model_id} (private)")
+        logger.info(f"Checkpoints will be synced to https://huggingface.co/{hugging_face_model_id} (private)")
 
     trainer = transformers.Trainer(
         model=model,
