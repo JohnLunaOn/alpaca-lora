@@ -9,6 +9,7 @@ from datasets import load_dataset
 import requests
 from huggingface_hub import configure_http_backend
 import logging
+from transformers.utils import logging as train_logging
 
 """
 Unused imports:
@@ -80,14 +81,17 @@ def train(
 ):
     # setup logger
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.INFO)    
     file_formatter = logging.Formatter(fmt="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
                                        datefmt="%m/%d/%Y %H:%M:%S", )
-    file_handler = logging.FileHandler(
-        os.path.join(output_dir, "training.log"))
+    file_handler = logging.FileHandler(os.path.join(output_dir, "training.log"))
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
     logger.addHandler(logging.StreamHandler(sys.stdout))
+
+    # train logger
+    train_logging.set_verbosity_info()
+    train_logging.add_handler(file_handler)
 
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         logger.info(
