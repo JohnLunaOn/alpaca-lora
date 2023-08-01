@@ -86,13 +86,13 @@ def train(
                                        datefmt="%m/%d/%Y %H:%M:%S", )
     file_handler = logging.FileHandler(os.path.join(output_dir, "training.log"))
     file_handler.setFormatter(file_formatter)
+    file_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)
     logger.addHandler(logging.StreamHandler(sys.stdout))
 
     # train logger
-    train_logging.set_verbosity_info()
-    train_logging.add_handler(file_handler)
-    train_logging.get_logger("transformers").addHandler(file_handler)
+    # train_logging.add_handler(file_handler)
+    # train_logging.get_logger("transformers").addHandler(file_handler)
 
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         logger.info(
@@ -296,6 +296,7 @@ def train(
             fp16=True,
             logging_first_step=1,
             logging_steps=10,
+            logging_dir=output_dir,
             optim="adamw_torch",
             evaluation_strategy="steps" if val_set_size > 0 else "no",
             save_strategy="steps",
