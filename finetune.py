@@ -10,6 +10,7 @@ import requests
 from huggingface_hub import configure_http_backend
 import logging
 from transformers.utils import logging as train_logging
+from transformers import TrainerCallback
 
 """
 Unused imports:
@@ -81,18 +82,28 @@ def train(
 ):
     # setup logger
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)    
+    fileLogger = logging.getLogger("fileLogger")
+    fileLogger.setLevel(logging.INFO)   
+    logger.setLevel(logging.INFO)
+
+    # log to file
     file_formatter = logging.Formatter(fmt="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
                                        datefmt="%m/%d/%Y %H:%M:%S", )
     file_handler = logging.FileHandler(os.path.join(output_dir, "training.log"))
     file_handler.setFormatter(file_formatter)
-    file_handler.setLevel(logging.INFO)
+    fileLogger.addHandler(file_handler)
     logger.addHandler(file_handler)
+    train_logging.add_handler(file_handler)
+
+    # log to console
     logger.addHandler(logging.StreamHandler(sys.stdout))
 
-    # train logger
-    # train_logging.add_handler(file_handler)
-    # train_logging.get_logger("transformers").addHandler(file_handler)
+    # log loss to file
+    class PrinterCallback(TrainerCallback):
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            _ = logs.pop("total_flos", None)
+            if state.is_local_process_zero:
+                fileLogger.info(logs)
 
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         logger.info(
@@ -296,7 +307,6 @@ def train(
             fp16=True,
             logging_first_step=1,
             logging_steps=10,
-            logging_dir=output_dir,
             optim="adamw_torch",
             evaluation_strategy="steps" if val_set_size > 0 else "no",
             save_strategy="steps",
@@ -323,6 +333,7 @@ def train(
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
         ),
+        callbacks=[PrinterCallback]
     )
     model.config.use_cache = False
 
