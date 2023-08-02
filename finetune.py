@@ -300,13 +300,14 @@ def train(
     args = transformers.TrainingArguments(
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
-            warmup_ratio=0.05,
+            warmup_ratio=0.07,
             num_train_epochs=num_epochs,
             max_steps=max_steps,
             learning_rate=learning_rate,
-            fp16=True,
+            lr_scheduler_type='constant', #Learning rate schedule. Constant a bit better than cosine, and has advantage for analysis (from qlora)
+            bf16=True,
             logging_first_step=1,
-            logging_steps=10,
+            logging_steps=5,
             optim="adamw_torch",
             evaluation_strategy="steps" if val_set_size > 0 else "no",
             save_strategy="steps",
