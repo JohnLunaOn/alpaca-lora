@@ -9,7 +9,6 @@ from datasets import load_dataset
 import requests
 from huggingface_hub import configure_http_backend
 import logging
-from transformers.utils import logging as train_logging
 from transformers import TrainerCallback
 
 """
@@ -94,7 +93,6 @@ def train(
     file_handler.setFormatter(file_formatter)
     fileLogger.addHandler(file_handler)
     logger.addHandler(file_handler)
-    train_logging.add_handler(file_handler)
 
     # log to console
     logger.addHandler(logging.StreamHandler(sys.stdout))
