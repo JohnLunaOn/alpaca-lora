@@ -163,11 +163,11 @@ def train(
     model = LlamaForCausalLM.from_pretrained(
         base_model,
         load_in_8bit=True,
-        torch_dtype=torch.float16,
+        torch_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float32, # weights must be fp32 or bf16 from qlora and https://github.com/yongzhuo/Llama2-SFT/blob/main/llama2_sft/ft_llama2/train.py
         device_map=device_map,
     )
 
-    logger.info(f"Model configs: {model.config}")
+    logger.info(f"Model config: {model.config}")
 
     tokenizer = LlamaTokenizer.from_pretrained(base_model)
 
