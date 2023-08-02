@@ -79,6 +79,7 @@ def train(
     prompt_template_name: str = "alpaca",  # The prompt template to use, will default to alpaca.
     hugging_face_token: str = None,
     hugging_face_model_id: str = None,
+    log_file: str = "training.log",
 ):
     # setup logger
     logger = logging.getLogger()
@@ -89,7 +90,7 @@ def train(
     # log to file
     file_formatter = logging.Formatter(fmt="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
                                        datefmt="%m/%d/%Y %H:%M:%S", )
-    file_handler = logging.FileHandler(os.path.join(output_dir, "training.log"))
+    file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(file_formatter)
     fileLogger.addHandler(file_handler)
     logger.addHandler(file_handler)
