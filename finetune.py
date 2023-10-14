@@ -1,3 +1,4 @@
+# 2023.10.14 参考下面的实现做了兼容 Mistral 模型的修改 https://github.com/brevdev/notebooks/blob/main/mistral-finetune-own-data.ipynb 
 import os
 import sys
 from typing import List
@@ -11,20 +12,13 @@ from huggingface_hub import configure_http_backend
 import logging
 from transformers import TrainerCallback
 
-"""
-Unused imports:
-import torch.nn as nn
-import bitsandbytes as bnb
-"""
-
 from peft import (
     LoraConfig,
     get_peft_model,
-    get_peft_model_state_dict,
     prepare_model_for_kbit_training,
     set_peft_model_state_dict,
 )
-from transformers import LlamaForCausalLM, LlamaTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from utils.prompter import Prompter
 
@@ -159,7 +153,7 @@ def train(
     if len(wandb_log_model) > 0:
         os.environ["WANDB_LOG_MODEL"] = wandb_log_model
 
-    model = LlamaForCausalLM.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
         base_model,
         load_in_8bit=True,
         device_map=device_map,
@@ -168,12 +162,18 @@ def train(
     model.config.torch_dtype=torch_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float32 # weights must be fp32 or bf16 from qlora and https://github.com/yongzhuo/Llama2-SFT/blob/main/llama2_sft/ft_llama2/train.py
     logger.info(f"Model config: {model.config}")
 
-    tokenizer = LlamaTokenizer.from_pretrained(base_model)
-
-    tokenizer.pad_token_id = (
-        0  # unk. we want this to be different from the eos token
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model,
+        padding_side="left",
+        add_eos_token=True,
+        add_bos_token=True,
+        # trust_remote_code=True
     )
-    tokenizer.padding_side = "left"  # must be left, otherwise loss will be huge
+    tokenizer.pad_token = tokenizer.eos_token
+
+    # tokenizer.pad_token_id = (
+    #     0  # unk. we want this to be different from the eos token
+    # )
 
     def tokenize(prompt, add_eos_token=True):
         # there's probably a way to do this with the tokenizer settings
@@ -343,10 +343,6 @@ def train(
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
 
     model.save_pretrained(output_dir)
-
-    print(
-        "\n If there's a warning about missing keys above, please disregard :)"
-    )
 
 
 if __name__ == "__main__":

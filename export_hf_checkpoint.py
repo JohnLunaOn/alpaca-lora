@@ -1,7 +1,7 @@
 import sys
 import torch
 from peft import PeftModel
-from transformers import AutoModelForCausalLM, LlamaTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # Based on https://github.com/tloen/alpaca-lora/blob/main/export_hf_checkpoint.py
 # Note that this does NOT guard against no-op merges. I would suggest testing the output.
@@ -44,5 +44,5 @@ base_model.save_pretrained(
     dest_path, state_dict=deloreanized_sd, max_shard_size="10GB"
 )
 
-tokenizer = LlamaTokenizer.from_pretrained(source_path)
+tokenizer = AutoTokenizer.from_pretrained(source_path)
 tokenizer.save_pretrained(dest_path)
