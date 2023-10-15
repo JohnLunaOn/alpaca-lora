@@ -18,7 +18,7 @@ from peft import (
     prepare_model_for_kbit_training,
     set_peft_model_state_dict,
 )
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 from utils.prompter import Prompter
 
@@ -153,13 +153,22 @@ def train(
     if len(wandb_log_model) > 0:
         os.environ["WANDB_LOG_MODEL"] = wandb_log_model
 
+    # from: https://github.com/tdolan21/marlin-mistral-7b-v0.1-ft/blob/main/train.py
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.bfloat16
+    )
+
     model = AutoModelForCausalLM.from_pretrained(
         base_model,
-        load_in_8bit=True,
+        quantization_config=bnb_config,
+        # load_in_8bit=True,
         device_map=device_map,
     )
 
-    model.config.torch_dtype=torch_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float32 # weights must be fp32 or bf16 from qlora and https://github.com/yongzhuo/Llama2-SFT/blob/main/llama2_sft/ft_llama2/train.py
+    # model.config.torch_dtype=torch_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float32 # weights must be fp32 or bf16 from qlora and https://github.com/yongzhuo/Llama2-SFT/blob/main/llama2_sft/ft_llama2/train.py
     logger.info(f"Model config: {model.config}")
 
     tokenizer = AutoTokenizer.from_pretrained(
