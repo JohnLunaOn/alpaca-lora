@@ -44,5 +44,5 @@ base_model.save_pretrained(
     dest_path, state_dict=deloreanized_sd, max_shard_size="10GB"
 )
 
-tokenizer = AutoTokenizer.from_pretrained(source_path)
+tokenizer = AutoTokenizer.from_pretrained(source_path, use_fast=False)
 tokenizer.save_pretrained(dest_path)

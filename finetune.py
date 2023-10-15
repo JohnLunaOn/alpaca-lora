@@ -43,7 +43,8 @@ def train(
     data_path: str = "yahma/alpaca-cleaned",
     output_dir: str = "./lora-alpaca",
     # training hyperparams
-    batch_size: int = 128,
+    load_in_4bit: bool = False, # default load in 8bit
+    batch_size: int = 8,
     micro_batch_size: int = 4,
     num_epochs: int = 3,
     max_steps: int = -1,
@@ -104,6 +105,7 @@ def train(
             f"base_model: {base_model}\n"
             f"data_path: {data_path}\n"
             f"output_dir: {output_dir}\n"
+            f"load_in_4bit: {load_in_4bit}\n"
             f"batch_size: {batch_size}\n"
             f"micro_batch_size: {micro_batch_size}\n"
             f"num_epochs: {num_epochs}\n"
@@ -155,7 +157,8 @@ def train(
 
     # from: https://github.com/tdolan21/marlin-mistral-7b-v0.1-ft/blob/main/train.py
     bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
+        load_in_4bit=load_in_4bit,
+        load_in_8bit=not load_in_4bit,
         bnb_4bit_use_double_quant=True,
         bnb_4bit_quant_type="nf4",
         bnb_4bit_compute_dtype=torch.bfloat16
