@@ -164,12 +164,14 @@ def train(
 
     tokenizer = AutoTokenizer.from_pretrained(
         base_model,
+        use_fast=False,
         padding_side="left",
         add_eos_token=True,
         add_bos_token=True,
         # trust_remote_code=True
     )
     tokenizer.pad_token = tokenizer.eos_token
+    logger.info(f"Tokenizer: {tokenizer}") # mistral & llama should use same LLamaTokenizer
 
     # tokenizer.pad_token_id = (
     #     0  # unk. we want this to be different from the eos token
