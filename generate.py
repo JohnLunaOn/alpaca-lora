@@ -1,3 +1,4 @@
+import os
 import sys
 import fire
 import torch
@@ -18,7 +19,8 @@ else:
 print(f"Device type: {device}")
 
 def main(
-    prompt_file,
+    prompt_path,
+    dest_folder,
     base_model: str = "",
     lora: str = "",
     seed: int = 1,
@@ -116,14 +118,36 @@ def main(
         output = tokenizer.decode(s)
         return output
 
-    print("Prompt file:", prompt_file)
-    with open(prompt_file, 'r', encoding='utf-8') as file_in:
-        instruction = file_in.read()
-        print("Prompt:\n", instruction)
+    def evaluateFile(prompt_file_path, dest_folder):
+        print("Prompt file:", prompt_file_path)
 
-    print("\nResponse:\n")
-    response = evaluate(instruction)
-    print(response)
+        with open(prompt_file_path, 'r', encoding='utf-8') as file_in:
+            instruction = file_in.read()
+            print("Prompt:\n", instruction)
+
+        print("\nResponse:\n")
+        response = evaluate(instruction)
+        print(response)
+
+        # Create dest_folder if not exists
+        if not os.path.exists(dest_folder):
+            os.makedirs(dest_folder)
+
+        # Save the response in dest_folder
+        dest_file_path = os.path.join(dest_folder, f"{os.path.basename(prompt_file_path)}.result.txt")
+        with open(dest_file_path, 'w', encoding='utf-8') as file_out:
+            file_out.write(response)
+
+
+    if os.path.isdir(prompt_path):
+        for filename in os.listdir(prompt_path):
+            if filename.endswith(".prompt"):
+                prompt_file_path = os.path.join(prompt_path, filename)
+                evaluateFile(prompt_file_path, dest_folder)
+    elif os.path.isfile(prompt_path):
+        evaluateFile(prompt_path, dest_folder)
+    else:
+        print("Invalid prompt_path")
 
 if __name__ == "__main__":
     fire.Fire(main)
