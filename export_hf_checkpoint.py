@@ -45,4 +45,5 @@ base_model.save_pretrained(
 )
 
 tokenizer = AutoTokenizer.from_pretrained(source_path, use_fast=False)
+tokenizer.pad_token = tokenizer.eos_token
 tokenizer.save_pretrained(dest_path)
