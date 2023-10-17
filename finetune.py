@@ -321,7 +321,7 @@ def train(
             bf16=True,
             logging_first_step=1,
             logging_steps=5,
-            optim="adamw_torch",
+            optim="paged_adamw_32bit", # recommend by QLoRA
             evaluation_strategy="steps" if val_set_size > 0 else "no",
             save_strategy="steps",
             eval_steps=save_steps if val_set_size > 0 else None,
