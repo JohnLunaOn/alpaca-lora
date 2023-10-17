@@ -59,6 +59,12 @@ def train(
     lora_target_modules: List[str] = [
         "q_proj",
         "v_proj",
+        "k_proj", 
+        "o_proj", 
+        "gate_proj", 
+        "down_proj", 
+        "up_proj", 
+        "lm_head"
     ],
     # llm hyperparams
     train_on_inputs: bool = True,  # if False, masks out inputs in loss
