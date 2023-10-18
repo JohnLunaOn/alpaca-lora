@@ -15,6 +15,8 @@ source_path = sys.argv[1]
 lora_path = sys.argv[2]
 dest_path = sys.argv[3]
 
+print(f"Loading base model from {source_path}")
+
 base_model = AutoModelForCausalLM.from_pretrained(
     source_path,
     load_in_8bit=False,
@@ -23,12 +25,16 @@ base_model = AutoModelForCausalLM.from_pretrained(
     trust_remote_code=True,
 )
 
+print(f"Loading lora from {lora_path}")
+
 lora_model = PeftModel.from_pretrained(
     base_model,
     lora_path,
     device_map={"": "cpu"},
     torch_dtype=torch.float16,
 )
+
+print(f"Merging model and lora")
 
 # merge weights - new merging method from peft
 lora_model = lora_model.merge_and_unload()
@@ -41,10 +47,14 @@ lora_model.train(False)
 #     if "lora" not in k
 # }
 
+print(f"Saving merged model to {dest_path}")
+
 base_model.save_pretrained(
     dest_path, max_shard_size="10GB"
     # ,state_dict=deloreanized_sd
 )
+
+print(f"Saving tokenizer to {dest_path}")
 
 tokenizer = AutoTokenizer.from_pretrained(source_path)
 tokenizer.save_pretrained(dest_path)
