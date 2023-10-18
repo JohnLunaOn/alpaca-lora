@@ -15,13 +15,28 @@ source_path = sys.argv[1]
 lora_path = sys.argv[2]
 dest_path = sys.argv[3]
 
+# Check if CUDA is available and get the GPU device name
+device_available = torch.cuda.is_available()
+
+# Initialize device_map as using CPU
+device_map = {"": "cpu"}
+
+# Check if GPU with sufficient memory is available
+if device_available:
+    cuda_device = torch.device('cuda')
+    total_memory = torch.cuda.get_device_properties(cuda_device).total_memory / 1e9  # In GB
+    
+    if total_memory > 15:
+        device_map = {"": "cuda"}
+
+print(f"Device Map: {device_map}")
 print(f"Loading base model from {source_path}")
 
 base_model = AutoModelForCausalLM.from_pretrained(
     source_path,
     load_in_8bit=False,
     torch_dtype=torch.float16,
-    device_map={"": "cpu"},
+    device_map=device_map,
     trust_remote_code=True,
 )
 
@@ -30,7 +45,7 @@ print(f"Loading lora from {lora_path}")
 lora_model = PeftModel.from_pretrained(
     base_model,
     lora_path,
-    device_map={"": "cpu"},
+    device_map=device_map,
     torch_dtype=torch.float16,
 )
 
