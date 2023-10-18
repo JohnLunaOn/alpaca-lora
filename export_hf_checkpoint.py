@@ -26,7 +26,7 @@ if device_available:
     cuda_device = torch.device('cuda')
     total_memory = torch.cuda.get_device_properties(cuda_device).total_memory / 1e9  # In GB
     
-    if total_memory > 15:
+    if total_memory > 18: # 7B 模型需要 17GB+ 的内存才能merge
         device_map = {"": "cuda"}
 
 print(f"Device Map: {device_map}")
