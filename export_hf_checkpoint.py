@@ -1,3 +1,4 @@
+import os
 import sys
 import torch
 from peft import PeftModel
@@ -33,17 +34,31 @@ lora_model = PeftModel.from_pretrained(
 lora_model = lora_model.merge_and_unload()
 lora_model.train(False)
 
-lora_model_sd = lora_model.state_dict()
-deloreanized_sd = {
-    k.replace("base_model.model.", ""): v
-    for k, v in lora_model_sd.items()
-    if "lora" not in k
-}
+# lora_model_sd = lora_model.state_dict()
+# deloreanized_sd = {
+#     k.replace("base_model.model.", ""): v
+#     for k, v in lora_model_sd.items()
+#     if "lora" not in k
+# }
 
 base_model.save_pretrained(
-    dest_path, state_dict=deloreanized_sd, max_shard_size="10GB"
+    dest_path, max_shard_size="10GB"
+    # ,state_dict=deloreanized_sd
 )
 
-tokenizer = AutoTokenizer.from_pretrained(source_path, use_fast=False)
-tokenizer.pad_token = tokenizer.eos_token
+tokenizer = AutoTokenizer.from_pretrained(source_path)
 tokenizer.save_pretrained(dest_path)
+
+# We don't use added_tokens but it will be saved, have to remove it to prevent llama.cpp failure
+added_tokens_file = "added_tokens.json"
+
+# 构建完整的added_tokens文件路径
+added_tokens_path = os.path.join(dest_path, added_tokens_file)
+
+# 如果文件存在，则重命名它，添加 .nouse 后缀
+if os.path.exists(added_tokens_path):
+    new_name = f"{added_tokens_path}.nouse"
+    os.rename(added_tokens_path, new_name)
+    print(f"Renamed {added_tokens_path} to {new_name}")
+else:
+    print(f"{added_tokens_path} does not exist, no need to rename.")
